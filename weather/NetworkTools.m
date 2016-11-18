@@ -19,17 +19,12 @@ static NSString *errorDomainName = @"com.friends.www";
 - (void)loadWeatherInformationWithCallBack:(callBack)callBack keepFirst:(BOOL)isKeepFirst {
 
     NSString *string = @"data/sk/101180101.html";
-    NSURLSessionDataTask *originalTask = [self.datas objectForKey:string];
-    if (isKeepFirst && originalTask) {
-        return;
-    }
-    [originalTask cancel];
-    NSURLSessionDataTask *task = [self requestMethod:@"GET" URLString:string params:nil finish:callBack];
-    [self.datas setValue:task forKey:string];
+    [self requestMethod:@"GET" URLString:string params:nil finish:callBack keepFirst:isKeepFirst];
+    
 }
 
 // get和post的封装
-- (NSURLSessionDataTask *)requestMethod:(NSString *)method URLString:(NSString *)string params:(NSDictionary *)params finish:(callBack)callBack {
+- (void)requestMethod:(NSString *)method URLString:(NSString *)string params:(NSDictionary *)params finish:(callBack)callBack keepFirst:(BOOL)isKeepFirst {
     
     // 成功回调
     void(^successBlock)(NSURLSessionDataTask *, id) = ^(NSURLSessionDataTask *task, id responseObject) {
@@ -52,14 +47,22 @@ static NSString *errorDomainName = @"com.friends.www";
         callBack(nil, error);
     };
     
+    NSURLSessionDataTask *originalTask = [self.datas objectForKey:string];
+    if (isKeepFirst && originalTask) {
+        return;
+    }
+    
+    [originalTask cancel];
+    NSURLSessionDataTask *task = nil;
     if ([method isEqualToString:@"GET"]) {
-        return [self GET:string parameters:params success:successBlock failure:failBlock];
+        task = [self GET:string parameters:params success:successBlock failure:failBlock];
     }
     if ([method isEqualToString:@"POST"]) {
-        return [self POST:string parameters:params success:successBlock failure:failBlock];
+        task = [self POST:string parameters:params success:successBlock failure:failBlock];
     }
-    return nil;
+    [self.datas setValue:task forKey:string];
 }
+
 
 + (instancetype)shareNetworkTools {
     
